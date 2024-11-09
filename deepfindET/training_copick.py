@@ -131,16 +131,8 @@ class Train(core.DeepFindET):
         """
         self.check_attributes()
 
-        if self.net is None:
-            self.net, self.model_parameters = model_loader.load_model(self.dim_in, self.Ncl, 'unet', None)          
-
-        # TensorBoard writer
-        log_dir = os.path.join(self.path_out, "tensorboard_logs")
-        tf.summary.create_file_writer(log_dir)
-        tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, profile_batch=0)
-
         # gpus = tf.config.list_logical_devices('GPU')
-        # strategy = tf.distribute.MirroredStrategy(gpus)
+        strategy = tf.distribute.MirroredStrategy(gpus)
 
         # Check GPU memory limit
         gpus = tf.config.experimental.list_physical_devices("GPU")
@@ -156,10 +148,20 @@ class Train(core.DeepFindET):
             except RuntimeError as e:
                 print(e)
         else:
-            print("No GPU found.")        
+            print("No GPU found.") 
 
-        # Build network (not in constructor, else not possible to init model with weights from previous train round):
-        self.net.compile(optimizer=self.optimizer, loss=self.loss, metrics=["accuracy"])
+        with strategy.scope():
+
+            if self.net is None:
+                self.net, self.model_parameters = model_loader.load_model(self.dim_in, self.Ncl, 'unet', None)          
+    
+            # TensorBoard writer
+            log_dir = os.path.join(self.path_out, "tensorboard_logs")
+            tf.summary.create_file_writer(log_dir)
+            tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, profile_batch=0)
+    
+            # Build network (not in constructor, else not possible to init model with weights from previous train round):
+            self.net.compile(optimizer=self.optimizer, loss=self.loss, metrics=["accuracy"])
 
         self.batch_data = np.zeros((self.batch_size, self.dim_in, self.dim_in, self.dim_in, 1))
         self.batch_target = np.zeros((self.batch_size, self.dim_in, self.dim_in, self.dim_in, self.Ncl))
