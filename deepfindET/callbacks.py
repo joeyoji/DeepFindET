@@ -54,7 +54,7 @@ class DatasetSwapCallback(tf.keras.callbacks.Callback):
         sampled_train_ids = np.random.choice(
             self.train_instance.trainTomoIDs,
             self.train_instance.sample_size,
-            replace=False,
+            replace=True,
         )
         if len(self.train_instance.validTomoIDs) < self.train_instance.sample_size:
             sampled_valid_ids = self.train_instance.validTomoIDs
@@ -62,7 +62,7 @@ class DatasetSwapCallback(tf.keras.callbacks.Callback):
             sampled_valid_ids = np.random.choice(
                 self.train_instance.validTomoIDs,
                 self.train_instance.sample_size,
-                replace=False,
+                replace=True,
             )
 
         # Load datasets based on the provided paths and sampled IDs
